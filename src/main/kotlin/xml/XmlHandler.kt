@@ -17,7 +17,7 @@ object XmlHandler {
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
         parser.setInput(stream, null)
         XmlReplacement.setEntityReplacementText(parser)
-        println("Loaded JMdict file: $url")
+        println("Parsing: $url")
 
         var text = ""
         var event = parser.eventType
@@ -28,6 +28,7 @@ object XmlHandler {
         val kanjiList = ArrayList<XmlKanji>()
         val kanaList = ArrayList<XmlKana>()
 
+        val beginTime = System.currentTimeMillis()
         while (event != XmlPullParser.END_DOCUMENT) {
             val tag = parser.name
             when (event) {
@@ -82,7 +83,9 @@ object XmlHandler {
             event = parser.next()
         }
 
+        val endTime = System.currentTimeMillis() - beginTime
         println("Parsed ${hashMap.size} items")
+        println("($endTime ms)")
         return hashMap
     }
 
@@ -94,13 +97,14 @@ object XmlHandler {
         val parser = parserFactory.newPullParser()
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
         parser.setInput(stream, null)
-        println("Loaded Kanjidic file: $url")
+        println("Parsing: $url")
 
         var text = ""
         var attribute = ""
         var event = parser.eventType
         var kanji = Kanji()
 
+        val beginTime = System.currentTimeMillis()
         while (event != XmlPullParser.END_DOCUMENT) {
             val tag = parser.name
             val attr = when {
@@ -135,7 +139,9 @@ object XmlHandler {
             event = parser.next()
         }
 
+        val endTime = System.currentTimeMillis() - beginTime
         println("Parsed ${hashMap.size} items")
+        println("($endTime ms)")
         return hashMap
     }
 

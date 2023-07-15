@@ -1,7 +1,7 @@
 import database.SqliteDB
 import xml.XmlHandler
 
-fun main(args: Array<String>) {
+fun main() {
     val entries = XmlHandler.parseJMdict("JMdict_e.xml")
     val kanji = XmlHandler.parseKanji("kanjidic2.xml")
     SqliteDB.connect("dictionary.db")

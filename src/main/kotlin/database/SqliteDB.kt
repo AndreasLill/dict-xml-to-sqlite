@@ -26,6 +26,7 @@ object SqliteDB {
     fun createTables() {
         connection?.let {
             try {
+                val beginTime = System.currentTimeMillis()
                 val statement = it.createStatement()
                 // Entry
                 statement.executeUpdate("DROP TABLE IF EXISTS Entry")
@@ -42,7 +43,9 @@ object SqliteDB {
                 statement.executeUpdate("DROP TABLE IF EXISTS Kanji")
                 statement.executeUpdate("CREATE TABLE Kanji (Character NVARCHAR(1), Meaning VARCHAR(1000))")
                 it.commit()
+                val endTime = System.currentTimeMillis() - beginTime
                 println("Tables created")
+                println("($endTime ms)")
             } catch (e: SQLException) {
                 println(e)
             }
@@ -52,35 +55,39 @@ object SqliteDB {
     fun insertJMdict(items: HashMap<Int, Entry>) {
         connection?.let {
             try {
-            val batchSize = 500
-            var count = 0
-            val statement = it.createStatement()
-            items.values.sortedBy { e -> e.id }.forEach { entry ->
-                statement.addBatch("INSERT INTO Entry VALUES (${entry.id}, ${entry.commonScore})")
-                count++
+                val batchSize = 500
+                var count = 0
+                val beginTime = System.currentTimeMillis()
+                val statement = it.createStatement()
 
-                entry.reading.forEach { reading ->
-                    val kana = String.format("'%s'", reading.kana)
-                    val kanji = if (reading.kanji.isNotEmpty()) String.format("'%s'", reading.kanji) else "NULL"
-                    statement.addBatch("INSERT INTO Reading (EntryID, Kana, Kanji) VALUES (${entry.id}, $kana, $kanji)")
+                items.values.sortedBy { e -> e.id }.forEach { entry ->
+                    statement.addBatch("INSERT INTO Entry VALUES (${entry.id}, ${entry.commonScore})")
                     count++
-                }
 
-                entry.sense.forEach { sense ->
-                    val glossary = String.format("'%s'", sense.glossary.joinToString("|", transform = { str -> str.replace("'", "") }))
-                    val partOfSpeech = String.format("'%s'", sense.partOfSpeech.joinToString("|"))
-                    statement.addBatch("INSERT INTO Sense (EntryID, Glossary, PartOfSpeech) VALUES (${entry.id}, $glossary, $partOfSpeech)")
-                    count++
-                }
+                    entry.reading.forEach { reading ->
+                        val kana = String.format("'%s'", reading.kana)
+                        val kanji = if (reading.kanji.isNotEmpty()) String.format("'%s'", reading.kanji) else "NULL"
+                        statement.addBatch("INSERT INTO Reading (EntryID, Kana, Kanji) VALUES (${entry.id}, $kana, $kanji)")
+                        count++
+                    }
 
-                if (count % batchSize == 0) {
-                    statement.executeBatch()
-                    statement.clearBatch()
+                    entry.sense.forEach { sense ->
+                        val glossary = String.format("'%s'", sense.glossary.joinToString("|", transform = { str -> str.replace("'", "") }))
+                        val partOfSpeech = String.format("'%s'", sense.partOfSpeech.joinToString("|", transform = { pos -> pos.value.toString() }))
+                        statement.addBatch("INSERT INTO Sense (EntryID, Glossary, PartOfSpeech) VALUES (${entry.id}, $glossary, $partOfSpeech)")
+                        count++
+                    }
+
+                    if (count % batchSize == 0) {
+                        statement.executeBatch()
+                        statement.clearBatch()
+                    }
                 }
-            }
-            statement.executeBatch()
-            it.commit()
-            println("Inserted JMdict")
+                statement.executeBatch()
+                it.commit()
+                val endTime = System.currentTimeMillis() - beginTime
+                println("Inserted JMdict")
+                println("($endTime ms)")
             } catch (e: SQLException) {
                 println(e)
             }
@@ -92,11 +99,12 @@ object SqliteDB {
             try {
                 val batchSize = 500
                 var count = 0
+                val beginTime = System.currentTimeMillis()
                 val statement = it.createStatement()
 
                 items.values.forEach { kanji ->
                     val character = String.format("'%s'", kanji.character)
-                    val meaning = String.format("'%s'", kanji.meaning.joinToString("|", transform = { str -> str.replace("'", "") }))
+                    val meaning = if (kanji.meaning.isNotEmpty()) String.format("'%s'", kanji.meaning.joinToString("|", transform = { str -> str.replace("'", "") })) else "NULL"
                     statement.addBatch("INSERT INTO Kanji (Character, Meaning) VALUES ($character, $meaning)")
                     count++
 
@@ -108,7 +116,9 @@ object SqliteDB {
 
                 statement.executeBatch()
                 it.commit()
+                val endTime = System.currentTimeMillis() - beginTime
                 println("Inserted Kanji")
+                println("($endTime ms)")
             } catch (e: SQLException) {
                 println(e)
             }
