@@ -1,6 +1,7 @@
 package xml
 
 import model.Entry
+import model.Kanji
 import model.Sense
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
@@ -16,7 +17,7 @@ object XmlHandler {
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
         parser.setInput(stream, null)
         XmlReplacement.setEntityReplacementText(parser)
-        println("Loaded File: $url")
+        println("Loaded JMdict file: $url")
 
         var text = ""
         var event = parser.eventType
@@ -76,6 +77,59 @@ object XmlHandler {
                         kanjiList.clear()
                         kanaList.clear()
                     }
+                }
+            }
+            event = parser.next()
+        }
+
+        println("Parsed ${hashMap.size} items")
+        return hashMap
+    }
+
+    fun parseKanji(url: String): HashMap<String, Kanji> {
+
+        val stream = FileInputStream(url)
+        val hashMap = HashMap<String, Kanji>()
+        val parserFactory = XmlPullParserFactory.newInstance()
+        val parser = parserFactory.newPullParser()
+        parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+        parser.setInput(stream, null)
+        println("Loaded Kanjidic file: $url")
+
+        var text = ""
+        var attribute = ""
+        var event = parser.eventType
+        var kanji = Kanji()
+
+        while (event != XmlPullParser.END_DOCUMENT) {
+            val tag = parser.name
+            val attr = when {
+                parser.attributeCount > 0 -> parser.getAttributeValue(0)
+                else -> ""
+            }
+            when (event) {
+                XmlPullParser.START_TAG -> when (tag) {
+                    "character" -> kanji = Kanji()
+                    "reading" -> if (attr.isNotEmpty()) { attribute = attr }
+                    "meaning" -> if (attr.isNotEmpty()) { attribute = attr }
+                }
+                XmlPullParser.TEXT -> text = parser.text
+                XmlPullParser.END_TAG -> when (tag) {
+                    "literal" -> kanji.character = text
+                    "grade" -> kanji.grade = Integer.parseInt(text)
+                    "stroke_count" -> kanji.stroke = Integer.parseInt(text)
+                    "freq" -> kanji.freq = Integer.parseInt(text)
+                    "jlpt" -> kanji.jlpt = Integer.parseInt(text)
+                    "reading" -> if (attribute == "ja_on" || attribute == "ja_kun") {
+                        val reading = Kanji.Reading()
+                        reading.value = text
+                        reading.type = attribute.replace("ja_", "")
+                        kanji.reading.add(reading).also { attribute = "" }
+                    }
+                    "meaning" -> if (attribute.isEmpty()) {
+                        kanji.meaning.add(text).also { attribute = "" }
+                    }
+                    "character" -> hashMap[kanji.character] = kanji
                 }
             }
             event = parser.next()
