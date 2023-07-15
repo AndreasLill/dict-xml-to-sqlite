@@ -1,0 +1,5 @@
+package xml
+
+object XmlReplacement {
+
+}
