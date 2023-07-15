@@ -14,6 +14,7 @@ repositories {
 
 dependencies {
     implementation("org.xerial:sqlite-jdbc:3.42.0.0")
+    implementation("xpp3:xpp3:1.1.4c")
 }
 
 tasks.test {

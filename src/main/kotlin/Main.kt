@@ -1,6 +1,8 @@
 import database.SqliteDB
+import xml.XmlHandler
 
 fun main(args: Array<String>) {
-
-    SqliteDB.create()
+    val items = XmlHandler.parseJMdict("JMdict_e.xml")
+    SqliteDB.create("dictionary.db", items)
+    println("Done!")
 }

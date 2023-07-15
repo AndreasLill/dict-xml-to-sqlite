@@ -42,3 +42,5 @@ bin/
 .DS_Store
 
 dictionary.db
+dictionary.db-journal
+JMdict_e.xml
