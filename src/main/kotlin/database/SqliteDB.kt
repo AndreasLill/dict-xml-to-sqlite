@@ -30,18 +30,18 @@ object SqliteDB {
                 val statement = it.createStatement()
                 // Entry
                 statement.executeUpdate("DROP TABLE IF EXISTS Entry")
-                statement.executeUpdate("CREATE TABLE Entry (ID INTEGER PRIMARY KEY, CommonScore INTEGER)")
-                // reading
+                statement.executeUpdate("CREATE TABLE Entry (ID INTEGER PRIMARY KEY NOT NULL, CommonScore INTEGER NOT NULL)")
+                // Reading
                 statement.executeUpdate("DROP TABLE IF EXISTS Reading")
-                statement.executeUpdate("CREATE TABLE Reading (ID INTEGER PRIMARY KEY AUTOINCREMENT, EntryID INTEGER, Kana NVARCHAR(50), Kanji NVARCHAR(50), FOREIGN KEY(EntryID) REFERENCES Entry(ID))")
+                statement.executeUpdate("CREATE TABLE Reading (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, EntryID INTEGER NOT NULL, Kana TEXT NOT NULL, Kanji TEXT, FOREIGN KEY(EntryID) REFERENCES Entry(ID))")
                 statement.executeUpdate("CREATE INDEX IX_Reading_EntryID ON Reading (EntryID)")
                 // Sense
                 statement.executeUpdate("DROP TABLE IF EXISTS Sense")
-                statement.executeUpdate("CREATE TABLE Sense (ID INTEGER PRIMARY KEY AUTOINCREMENT, EntryID INTEGER, Glossary VARCHAR(1000), PartOfSpeech VARCHAR(1000), FOREIGN KEY(EntryID) REFERENCES Entry(ID))")
+                statement.executeUpdate("CREATE TABLE Sense (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, EntryID INTEGER NOT NULL, Glossary TEXT NOT NULL, PartOfSpeech TEXT NOT NULL, FOREIGN KEY(EntryID) REFERENCES Entry(ID))")
                 statement.executeUpdate("CREATE INDEX IX_Sense_EntryID ON Sense (EntryID)")
                 // Kanji
                 statement.executeUpdate("DROP TABLE IF EXISTS Kanji")
-                statement.executeUpdate("CREATE TABLE Kanji (Character NVARCHAR(1), Meaning VARCHAR(1000))")
+                statement.executeUpdate("CREATE TABLE Kanji (Character TEXT PRIMARY KEY NOT NULL, Meaning TEXT NOT NULL)")
                 it.commit()
                 val endTime = System.currentTimeMillis() - beginTime
                 println("Tables created")
@@ -104,7 +104,7 @@ object SqliteDB {
 
                 items.values.forEach { kanji ->
                     val character = String.format("'%s'", kanji.character)
-                    val meaning = if (kanji.meaning.isNotEmpty()) String.format("'%s'", kanji.meaning.joinToString("|", transform = { str -> str.replace("'", "") })) else "NULL"
+                    val meaning = String.format("'%s'", kanji.meaning.joinToString("|", transform = { str -> str.replace("'", "") }))
                     statement.addBatch("INSERT INTO Kanji (Character, Meaning) VALUES ($character, $meaning)")
                     count++
 
